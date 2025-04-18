@@ -1,0 +1,109 @@
+const Discord = require('discord.js');
+
+module.exports = {
+    name: 'item-sil',
+    description: 'Belirtilen kişiden belirtilen itemi siler.',
+    category: 'moderation',
+    aliases: ['itemekle'],
+    role: 'staff',
+    /**
+     * @param {Discord.Client} client
+     * @param {Discord.Message} message
+     * @param {Array<string>} args
+     */
+    async execute(client, message, args) {
+        let silah_item = client.config('itemler.silahlar');
+        let tüketim_item = client.config('itemler.tüketimler');
+        let yelek_item = client.config('itemler.yelekler');
+        let mermi_item = ['mermi'];
+        let ev_item = Object.keys(client.config('evler'));
+        let motor_item = Object.keys(client.config('motorlar'));
+        let araç_item = Object.keys(client.config('araçlar'));
+        let özel_araç_item = Object.keys(client.config('özel-araçlar'));
+
+        let item = args[1];
+        let kişi = message.mentions.members.first();
+        let miktar = args[2] || 1;
+
+        if (!kişi)
+            return message.reply({
+                embeds: [
+                    {
+                        color: '#fff',
+                        description: 'Lütfen geçerli bir kullanıcı belirtiniz.'
+                    }
+                ]
+            });
+        if (!item)
+            return message.reply({
+                embeds: [
+                    {
+                        color: '#fff',
+                        description: 'Lütfen geçerli bir item belirtiniz.'
+                    }
+                ]
+            });
+        if (!miktar || isNaN(miktar) || Number(miktar) < 0)
+            return message.reply({
+                embeds: [
+                    {
+                        color: '#fff',
+                        description: 'Lütfen geçerli bir miktar belirtiniz.'
+                    }
+                ]
+            });
+
+        if (silah_item.includes(item)) {
+            client.db.subtract(`${kişi.id}.envanter.silah.${item}.miktar`, Number(miktar));
+        } else if (tüketim_item.includes(item)) {
+            client.db.subtract(`${kişi.id}.envanter.tüketim.${item}`, Number(miktar));
+        } else if (yelek_item.includes(item)) {
+            client.db.subtract(`${kişi.id}.envanter.yelek.${item}`, Number(miktar));
+        } else if (mermi_item.includes(item)) {
+            client.db.subtract(`${kişi.id}.envanter.mermi`, Number(miktar));
+        } else if (ev_item.includes(item)) {
+            client.db.subtract(`${user.id}.evler.${item}`, Number(miktar));
+        } else if (motor_item.includes(item)) {
+            client.db.subtract(`${user.id}.motorlar.${item}`, Number(miktar));
+        } else if (araç_item.includes(item)) {
+            client.db.subtract(`${user.id}.araçlar.${item}`, Number(miktar));
+        } else if (özel_araç_item.includes(item)) {
+            client.db.subtract(`${user.id}.özel-araçlar.${item}`, Number(miktar));
+        } else {
+            return message.reply({
+                embeds: [
+                    {
+                        color: '#fff',
+                        description: 'Lütfen geçerli bir item belirtiniz.'
+                    }
+                ]
+            });
+        }
+
+        message.reply({
+            embeds: [
+                {
+                    color: '#fff',
+                    description: `**${kişi.displayName}** kişisinden **${miktar}** adet **${item}** itemi silindi.`
+                }
+            ]
+        });
+
+        try {
+            const developers = client.config('owners').map((owner) => client.users.cache.get(owner));
+
+            for (const developer of developers) {
+                developer
+                    ?.send({
+                        embeds: [
+                            {
+                                color: '#fff',
+                                description: `**${user.displayName}** adlı kullanıcıdan **${adet}** adet **${item}** itemi silindi.\n\nSilen Kişi: **${message.member.displayName}**`
+                            }
+                        ]
+                    })
+                    .catch(() => {});
+            }
+        } catch {}
+    }
+};
